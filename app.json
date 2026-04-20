@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "vulnerable_app",
-    "slug": "vulnerable_app",
+    "name": "PoucoSeguro App",
+    "slug": "poucos eguro-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",

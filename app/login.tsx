@@ -32,8 +32,8 @@ export default function LoginScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.title}>Login - PoC Vulnerável</Text>
-        <Text style={styles.subtitle}>Laboratório de Cibersegurança</Text>
+        <Text style={styles.title}>PoucoSeguro App</Text>
+        <Text style={styles.subtitle}>Login - Laboratório de Cibersegurança</Text>
 
         {/* Input de usuário em texto claro */}
         <TextInput

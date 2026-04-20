@@ -97,12 +97,19 @@ const requestHandler = (req, res) => {
     res.writeHead(200);
     res.end(JSON.stringify({
       status: 'running',
-      message: 'Mock Server para PoC Vulnerável',
+      message: 'Mock Server para PoC Vulnerável - PoucoSeguro App',
       routes: [
         'POST /api/login - Endpoint de login (HTTP inseguro)',
+        'POST /api/payment/request - Solicitar OTP (M1 + M2)',
+        'POST /api/payment/confirm - Confirmar pagamento (M1 + M2)',
+        'POST /api/products - Adicionar produto (M1 + M3)',
+        'GET /api/products - Listar produtos',
+        'POST /api/admin/delete-product - Deletar produto (M1 + M3)',
+        'GET /api/admin/all-transactions - Ver transações (M1 + M3 - credenciais em query string)',
         'GET /api/status - Status do servidor',
       ],
       users: Object.keys(USERS),
+      vulnerabilities: ['M1: Insecure Communication (HTTP)', 'M2: Insecure Data Storage', 'M3: Broken Access Control'],
     }));
     return;
   }
@@ -115,6 +122,215 @@ const requestHandler = (req, res) => {
       message: 'Mock Server para Aplicação Vulnerável de PoC',
       docs: 'Para detalhes, acesse /api/status',
     }));
+    return;
+  }
+
+  // ====== PAYMENT ENDPOINTS ======
+  // Rota: POST /api/payment/request - Solicitar OTP
+  if (pathname === '/api/payment/request' && method === 'POST') {
+    let body = '';
+
+    req.on('data', (chunk) => {
+      body += chunk.toString();
+    });
+
+    req.on('end', () => {
+      try {
+        const { username, cardLastDigits, cvv, amount } = JSON.parse(body);
+
+        if (!username || !cardLastDigits || !cvv || !amount) {
+          res.writeHead(400);
+          res.end(JSON.stringify({ error: 'Dados de pagamento incompletos' }));
+          return;
+        }
+
+        // ⚠️ VULNERÁVEL: Gera código OTP simples de 4 dígitos
+        const iToken = String(Math.floor(Math.random() * 9000) + 1000);
+
+        res.writeHead(200);
+        res.end(JSON.stringify({
+          success: true,
+          iToken: iToken,
+          message: `🔐 SMS de Banco:\n\nSeu código de acesso é: ${iToken}\n\nNunca compartilhe este código.`,
+          transactionReference: `TXN_${Date.now()}`,
+        }));
+
+        console.log(`✓ ${new Date().toISOString()} - OTP solicitado para ${username}: ${iToken}`);
+      } catch (err) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Invalid JSON' }));
+      }
+    });
+    return;
+  }
+
+  // Rota: POST /api/payment/confirm - Confirmar pagamento com código OTP
+  if (pathname === '/api/payment/confirm' && method === 'POST') {
+    let body = '';
+
+    req.on('data', (chunk) => {
+      body += chunk.toString();
+    });
+
+    req.on('end', () => {
+      try {
+        const { username, iToken, userInputCode, cardLastDigits, amount } = JSON.parse(body);
+
+        if (!username || !iToken || !userInputCode || !cardLastDigits || !amount) {
+          res.writeHead(400);
+          res.end(JSON.stringify({ error: 'Dados incompletos' }));
+          return;
+        }
+
+        // ⚠️ VULNERÁVEL: Validação simples do código
+        if (iToken !== userInputCode) {
+          res.writeHead(401);
+          res.end(JSON.stringify({
+            success: false,
+            message: 'Código OTP incorreto! Tente novamente.',
+          }));
+          return;
+        }
+
+        // Pagamento confirmado
+        const transactionId = `TXN_${username}_${Date.now()}`;
+
+        res.writeHead(200);
+        res.end(JSON.stringify({
+          success: true,
+          transactionId: transactionId,
+          message: `✅ Pagamento de R$ ${amount.toFixed(2)} realizado com sucesso!`,
+          timestamp: Date.now(),
+        }));
+
+        console.log(`✓ ${new Date().toISOString()} - Pagamento confirmado: ${transactionId}`);
+      } catch (err) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Invalid JSON' }));
+      }
+    });
+    return;
+  }
+
+  // ====== PRODUCT ENDPOINTS ======
+  // Rota: POST /api/products - Adicionar produto
+  if (pathname === '/api/products' && method === 'POST') {
+    let body = '';
+
+    req.on('data', (chunk) => {
+      body += chunk.toString();
+    });
+
+    req.on('end', () => {
+      try {
+        const { name, price, description, seller } = JSON.parse(body);
+
+        if (!name || !price || !seller) {
+          res.writeHead(400);
+          res.end(JSON.stringify({ error: 'Dados de produto incompletos' }));
+          return;
+        }
+
+        // ⚠️ VULNERÁVEL: Sem validação se seller é realmente um vendedor
+        const productId = `PROD_${Date.now()}`;
+
+        res.writeHead(200);
+        res.end(JSON.stringify({
+          success: true,
+          productId: productId,
+          message: `Produto "${name}" cadastrado com sucesso!`,
+        }));
+
+        console.log(`✓ ${new Date().toISOString()} - Produto adicionado: ${productId} por ${seller}`);
+      } catch (err) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Invalid JSON' }));
+      }
+    });
+    return;
+  }
+
+  // Rota: GET /api/products - Listar produtos
+  if (pathname === '/api/products' && method === 'GET') {
+    res.writeHead(200);
+    res.end(JSON.stringify({
+      success: true,
+      products: [],
+      message: 'Use o armazenamento local para produtos',
+    }));
+    return;
+  }
+
+  // ====== ADMIN ENDPOINTS ======
+  // Rota: POST /api/admin/delete-product - Deletar produto (Admin only)
+  if (pathname === '/api/admin/delete-product' && method === 'POST') {
+    let body = '';
+
+    req.on('data', (chunk) => {
+      body += chunk.toString();
+    });
+
+    req.on('end', () => {
+      try {
+        const { productId, adminUsername, adminPassword } = JSON.parse(body);
+
+        // ⚠️ VULNERÁVEL: Validação simples de credenciais
+        if (adminUsername !== 'admin' || adminPassword !== 'senha123') {
+          res.writeHead(401);
+          res.end(JSON.stringify({ error: 'Credenciais admin inválidas' }));
+          return;
+        }
+
+        res.writeHead(200);
+        res.end(JSON.stringify({
+          success: true,
+          message: `Produto ${productId} deletado com sucesso.`,
+        }));
+
+        console.log(`✓ ${new Date().toISOString()} - Produto deletado: ${productId} por admin`);
+      } catch (err) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Invalid JSON' }));
+      }
+    });
+    return;
+  }
+
+  // Rota: GET /api/admin/all-transactions - Ver todas as transações
+  // ⚠️ M1: Credenciais em query string!! SUPER INSEGURO
+  if (pathname === '/api/admin/all-transactions' && method === 'GET') {
+    const adminUsername = parsedUrl.query.adminUsername;
+    const adminPassword = parsedUrl.query.adminPassword;
+
+    // ⚠️ VULNERÁVEL: Validação trivial
+    if (adminUsername !== 'admin' || adminPassword !== 'senha123') {
+      res.writeHead(401);
+      res.end(JSON.stringify({ error: 'Credenciais admin inválidas' }));
+      return;
+    }
+
+    // Simular retorno de transações
+    res.writeHead(200);
+    res.end(JSON.stringify({
+      success: true,
+      transactions: [
+        {
+          id: 'TXN_comprador_123456',
+          username: 'comprador',
+          amount: 99.90,
+          timestamp: Date.now() - 3600000,
+        },
+        {
+          id: 'TXN_comprador_234567',
+          username: 'comprador',
+          amount: 149.90,
+          timestamp: Date.now(),
+        },
+      ],
+      message: 'Todas as transações',
+    }));
+
+    console.log(`✓ ${new Date().toISOString()} - Admin acessou todas as transações`);
     return;
   }
 

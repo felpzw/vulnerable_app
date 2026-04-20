@@ -4,6 +4,9 @@
  * Qualquer interceptação de rede pode expor credenciais e tokens.
  */
 
+const API_BASE_URL_DEBUG = 'http://10.0.2.2:3000';
+// const API_BASE_URL_NETWORK = 'https://192.168.1.100:3000';
+
 interface LoginResponse {
   token: string;
   role: 'comprador' | 'vendedor' | 'administrador';
@@ -22,7 +25,7 @@ interface LoginCredentials {
 export async function login(credentials: LoginCredentials): Promise<LoginResponse> {
   try {
     // ⚠️ VULNERÁVEL: HTTP sem criptografia - qualquer proxy/MITM pode interceptar
-    const response = await fetch('http://192.168.1.100:3000/api/login', {
+    const response = await fetch(`${API_BASE_URL_DEBUG}/api/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
