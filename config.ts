@@ -8,7 +8,8 @@
 // Você pode usar: adb shell "getprop ro.kernel.qemu.host.addr" para confirmar
 
 //export const API_BASE_URL = 'http://10.0.2.2:3000';
-export const API_BASE_URL = 'http://192.168.5.18:3000';
+//export const API_BASE_URL = 'http://192.168.5.18:3000';
+export const API_BASE_URL = 'http://192.168.240.1:8080'; //para o waydroid
 
 
 export const IS_INSECURE = true;

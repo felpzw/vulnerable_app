@@ -4,8 +4,10 @@
  * Qualquer interceptação de rede pode expor credenciais e tokens.
  */
 
-const API_BASE_URL_DEBUG = 'http://10.0.2.2:3000';
-// const API_BASE_URL_NETWORK = 'https://192.168.1.100:3000';
+//const API_BASE_URL_DEBUG = 'http://10.0.2.2:3000';
+//const API_BASE_URL_DEBUG = 'https://192.168.5.18:3000';
+export const API_BASE_URL_DEBUG = 'http://192.168.240.1:8080'; //para o waydroid
+
 
 interface LoginResponse {
   token: string;
